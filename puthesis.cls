@@ -2,6 +2,7 @@
 \ProvidesClass{puthesis}
          [2008/05/02 v1.4 Princeton University Thesis class]
 \RequirePackage{setspace}
+
 \newcounter{subyear}
 \setcounter{subyear}{\number\year}
 \def\submitted#1{\gdef\@submitted{#1}}
@@ -14,7 +15,7 @@
 \def\adviser#1{\gdef\@adviser{#1}}
 \long\def\@abstract{\@latex@error{No \noexpand\abstract given}\@ehc}
 \newcommand*{\frontmatter}{
-  \pagenumbering{roman}
+  \pagenumbering{arabic}
   }
 \newcommand*{\mainmatter}{\pagenumbering{arabic}}
 \newcommand*{\makelot}{}
@@ -87,7 +88,7 @@
     Recommended for Acceptance \\
     by the \@deptpref \\
     \@dept \\
-    Adviser: \@adviser
+    Advisors: \@adviser
   \end{center}
   \vspace{.3in}
   \extravspace{.3in}
@@ -180,10 +181,9 @@
   \doublespacing
   }
 }
+
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{report}}
 \ProcessOptions
-%% Not necessary to specify the point size - we inherit it from above
-%% \LoadClass[12pt]{report}
 \LoadClass{report}
 \setlength{\oddsidemargin}{.5in}   %{.4375in}
 \setlength{\evensidemargin}{.5in} %{.4375in}
