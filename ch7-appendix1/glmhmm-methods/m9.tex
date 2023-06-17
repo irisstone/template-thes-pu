@@ -1,0 +1,28 @@
+\subsection{Bernoulli GLM}
+\label{sec:ap1:m9}
+\textit{Coding of covariates and choice output}. We coded the external covariates (referred to as inputs in Fig. 4b) and output (the mouse’s choice) on each trial as follows: 
+\begin{quote}
+$\Delta$ cues: an integer value from -16 to 16, divided by the standard deviation of the $\Delta$ cues across all sessions in all mice, representing the standardized difference between the number of cues on the right and left sides of the maze. 
+
+Laser: a value of 1,-1, or 0 depending on whether optogenetic inhibition was on the right hemisphere, left hemisphere, or off, respectively. 
+
+Previous choice: a value of 1 or  -1 if the choice on a previous trial was to the right or left, respectively. We set the value to 0 at the start of each session when there was an absence of previous choices (e.g. for the third trial of a session, previous choices 3-6 would be coded as 0). 
+
+Previous rewarded choice: a value of 1, -1, or 0 depending on whether the previous choice was correct and to the right, correct and to the left, or incorrect, respectively. 
+
+Choice output: a value of 1 or 0 depending on whether the mouse turned right or left.
+\end{quote} 
+\textit{Fitting}. We used a Bernoulli generalized linear model (GLM), also known as logistic regression, to model the  binary (right/left) choices of mice as a function of task covariates. This also corresponds to a 1-state GLM-HMM (Fig. 4; Extended Data Fig. 7a). The model was parameterized by a weight vector (carrying weights for sensory evidence, choice and reward history, and DMS inhibition). On each trial $t$, the weights map the external covariates to the probability of each choice $y_t$. The model can be written: 
+
+\begin{equation}
+\label{eq:m4}
+    p\left( {y_t = 1\left| {x_t} \right.} \right) = \frac{1}{{1 + {{{\mathrm{exp}}}}\left( { - {{{\mathrm{w}}}}^{{{\mathrm{T}}}}{{{\mathrm{x}}}}_{{{\mathrm{t}}}}} \right)}}
+\end{equation}
+
+where $y=1$ indicates a rightward choice, and $y=0$ indicates a leftward choice. We fit the model by penalized maximum likelihood, which involved minimizing the negative log-likelihood function plus a squared penalty term on the model weights. The log-likelihood function is given by the conditional probability of the choice data ${{{\mathbf{Y}}}} = y_1, \ldots ,y_T$ given all the external covariates ${{{\mathbf{X}}}} = x_1, \ldots ,x_T$, considered as a function of the model parameters given by: 
+
+\begin{equation}
+\begin{array}{c}\log \left( {p\left( {{{{\mathbf{Y}}}}|{{{\mathbf{X}}}},\;w} \right)} \right) = \mathop {\sum }\limits_{t = 1}^T {{{\mathrm{log}}}}\left( {p\left( {y_t|x_t} \right)} \right)\\ = \mathop {\sum }\limits_{t = 1}^T y_t\log \left( {p\left( {y_t = 1|x_t} \right)} \right) + \mathop {\sum }\limits_{t = 1}^T \left( {1 - y_t} \right)\log \left( {1 - p\left( {y_t = 1|x_t} \right)} \right)\end{array}
+\end{equation}
+
+We then minimized the loss function, given by $- \log p\left( {Y{{{\mathrm{|}}}}X,w} \right) + \frac{1}{2}w^Tw$, using Python’s ‘scipy.optimize.minimize’. This can be interpreted as a log-posterior over the weights, with $\frac{1}{2}w^Tw$ representing the negative log of a Gaussian prior distribution with mean zero and variance 1, which regularizes by penalizing large weight values. A variance of 1 was chosen because the resulting penalty was sufficient to resolve cases where the weights would grow unusually large and lead to decreases in the log-likelihood during fitting. We computed the posterior standard deviation of the fitted GLM weights (shown as error bars in Fig. 4c,d) by taking the diagonal elements of the inverse negative Hessian (matrix of second derivatives) of the log-posterior at its maximum \cite{pillow_model-based_2011, bishop_pattern_2006}.
