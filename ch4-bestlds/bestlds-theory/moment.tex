@@ -1,0 +1,85 @@
+\subsection{Moment conversion}
+\label{sec:bestlds:theory:moment}
+
+In the Bernoulli case we do not have access to $\{z_t\}$, the ``intermediate emissions'' that arise from the linearly transformed latents,   and therefore cannot directly construct $Z_p$ or $Z_f$ as described above. However, we \textit{are} able to infer their moments from the moments of $Y_p$ and $Y_f$ (defined analogously), which has been shown in the general case to be a sufficient proxy for use in SSID methods \cite{buesing_spectral_2012}. 
+
+
+In particular, let $z_p$ denote $(z_0, ..., z_{k - 1})^T$ and $z_f$ denote $(z_k, ..., z_{2k - 1})^T$, and define $u_p, u_f$ analogously. 
+Then the covariance of these concatenated matrix-valued random variables has a form that allows us to recover $R$ in Eq.~\ref{LQ_decomp} via Cholesky decomposition: 
+%may be approximated by computing the empirical covariance
+\begin{equation}
+    \label{cholesky}
+    \Sigma = \mathrm{cov}\Bigg[\begin{pmatrix}
+        u_p\\
+        u_f\\
+        z_p\\
+        z_f
+    \end{pmatrix}\Bigg]   
+    \; = \;  RR^T.
+\end{equation}
+%where we achieve the last line by taking the Cholesky decomposition of $\Sigma$. 
+Here, we are exploiting the fact that while the observations are not Gaussian, the intermediate emissions $z$, and their time-lagged representations $z_p$ and $z_f$, are Gaussian. This requires us to place an assumption of normality on the inputs, but we will show empirically that parameter recovery is good even when this assumption is violated (see Section~\ref{sec:bestlds:results:4.2}). For now, we begin by describing how to convert the moments of $y$ in order to infer $\Sigma$.
+
+
+The core goal of the moment conversion process is to obtain the mean and covariance of $(z_p, z_f)$ from the mean and covariance of $(y_p, y_f)$. In particular, since $z_p, z_f, u_p,$ and $u_f$ are all jointly normal, it is our goal to find their joint mean and covariance given the moments of $y_p, y_f$. For convenience, we overload the notation $u = \begin{pmatrix}
+    u_p \\
+    u_f
+\end{pmatrix}$, $z = \begin{pmatrix}
+    z_p \\
+    z_f
+\end{pmatrix}$, and $y = \begin{pmatrix}
+    y_p \\
+    y_f\end{pmatrix}$. Then the quantities we are interested in are:
+
+\begin{equation}
+\mu = \begin{pmatrix}
+    \mu^u \\
+    \mu^z
+\end{pmatrix} \qquad
+\Sigma = \begin{pmatrix}
+    \Sigma^{uu} & \Sigma^{uz}\\
+    \Sigma^{zu} & \Sigma^{zz}
+\end{pmatrix}
+\label{jointdef}
+\end{equation}
+
+We begin by relating the moments of $y$ to the mean $\mu^z$ and the covariance $\Sigma^{zz}$ of $z$. The required integrals in the logistic-Bernoulli case are analytically intractable, therefore we instead consider the probit-Bernoulli case. In this setting we have the implication $y_i = 1 \iff z_i \geq 0$, and can therefore conclude:
+\begin{align}
+    \begin{split}
+    \mathbb{E}[y_i] = P(z_i \geq 0) &= 1 - \Phi(0 | \mu^z_i, \Sigma^{zz}_{ii}) \\
+    \mathbb{E}[y_i y_j] = P(z_i \geq 0 \land z_j \geq 0) &= 1 - \Phi_2(0 | \mu^z_i, \mu^z_j, \Sigma^{zz}_{ii}, \Sigma^{zz}_{jj}, \Sigma^{zz}_{ij})
+    \end{split}
+    \label{y_first_mom_conv}
+\end{align}
+
+\noindent where $\bullet_i$ refers to the $i$th entry of $\bullet$, and $\Phi$ and $\Phi_2$ denote the univariate and bivariate cumulative normal distributions, respectively. Unfortunately, since the diagonal second moments are degenerate (that is, $\mathbb{E}[y_iy_i] = \mathbb{E}[y_i]$), this constitutes an underdetermined system of equations characterizing $\mu^z$ and $\Sigma^{zz}$. To resolve this identifiability issue, we set the diagonal covariances $\Sigma^{zz}_{ii} = 1$ without loss of generality and then solve for $\mu^{z}_i$ and $\Sigma^{zz}_{ij}$ using a numerical root-finder. 
+
+In regimes with extremely high-autocorrelation, it is possible that the system in Eq.~\ref{y_first_mom_conv} will not yield a solution. In such cases, it is possible to convert these constraints into a minimization problem and search for the covariance that most closely matches the target. In practice, however, we expect that such regimes (where the vast majority of the data is comprised of either only $0$s or only $1$s) are rare in real-world applications and did not encounter the need to do so in our analyses.
+
+Next, we turn our attention to the inputs. In our case, $\mu^u$ and $\Sigma^{uu}$ are immediately available as the empirical mean and covariance of the inputs. As such, it only remains to compute the cross-covariance $\Sigma^{uz}$. To that end, we evaluate the cross-moment\footnote{For readability, we omit the subscripts $i$ and $j$ to the right of the equals sign, but each $z$ is really $z_i$ and each $u$ is really $u_j$}:
+\begin{align}
+    \begin{split}
+    \mathbb{E}[y_i u_j] & =\int_{-\infty}^\infty \int_0^\infty u p(u,z) dz du \\
+    &= \int_0^\infty \Big(\int_\infty^\infty up(u|z)du\Big) p(z)dz \\
+    &= \int_0^\infty \Big(\mu^u + \Sigma^{uz} \Sigma^{zz^{-1}} (z - \mu^z)\Big) p(z) dz \\
+    &= \Big(\mu^{u} - \Sigma^{uz}\Sigma^{zz^{-1}}\mu^{z}\Big)\Big(1 - \Phi(0|\mu^z, \Sigma^{zz})\Big) + \Sigma^{uz}\Sigma^{zz^{-1}}\int_0^\infty z p(z) dz 
+    \label{crossmoment}
+    \end{split}
+\end{align}
+\noindent The integral in the second term is the mean of a truncated normal distribution and can be rendered as \cite{korotkov_integrals_2020}:
+\begin{align*}
+    \int_0^\infty z p(z) dz &= \frac{\sqrt{\pi}\beta\big(\text{erf}(\beta) - 1\big) + \text{exp}(-\beta^2)}{2\alpha^2\sqrt{2\pi\Sigma_z}}
+\end{align*}
+\noindent with $\alpha = 0.5\Sigma^{zz^{-1}}$ and $\beta = -0.5\mu_z\Sigma^{zz^{-1}}$. From this point, $\Sigma$ is converted to $R$ as described in Eq.~\ref{cholesky} and given as an input to N4SID.
+
+To summarize, the steps of bestLDS are:
+\begin{enumerate}
+  \item Compute the moments of $y$
+  \item Convert those moments to moments of $z$ as defined in Equation~\ref{jointdef}
+  \begin{enumerate}
+      \item Compute $\mu$ and $\Sigma^{zz}$ by solving the system in Equation~\ref{y_first_mom_conv}
+      \item Use $\mu$ and $\Sigma^{zz}$ to compute $\Sigma^{uz}$ by solving the system in Equation~\ref{crossmoment}
+  \end{enumerate} 
+  \item Cholesky decompose $\Sigma = RR^T$
+  \item Take $R$ as the input to the standard N4SID algorithm to recover the system matrices 
+\end{enumerate}

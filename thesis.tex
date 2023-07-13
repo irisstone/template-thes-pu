@@ -22,13 +22,17 @@
   \fancyhead[R]{\nouppercase\leftmark} % Chapter heading (not in all caps) on the right side of the header
   \fancyfoot[C]{\thepage} % Page number in the center of the footer
 }
-
+\usepackage{amsmath}
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{multirow}
 % Apply the page style to all pages
 \pagestyle{myfancy}
 
 \usepackage{ccaption}
 \usepackage{caption}
 \usepackage[singlelinecheck=false]{caption}
+\usepackage[justification=justified]{caption}
 % Set the font size for figure captions
 \captionsetup[figure]{font=small}
 % I prefer proquestmode to be off for electronic copies for normal use, since the colored links are less distracting. However when printed in black and white, the colored links are difficult to read. 
@@ -119,7 +123,7 @@
 % Printed copy
 % url package understands urls (with proper line-breaks) without hyperlinking them
 \usepackage{url}
-\usepackage{amsmath}
+%\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathtools}
 \usepackage[upgreek, LGRgreek]{mathastext}

@@ -1,0 +1,80 @@
+\subsection{Subspace identification}
+\label{sec:bestlds:theory:subspace}
+
+In general, subspace identification algorithms operate by first extracting an estimate of the latent state and then using linear regression to identify the system parameters. Concretely, given the latent state sequence $(x_1, ..., x_N)$ and the inputs $(u_1, ..., u_N)$ one may identify $A$ and $B$ by least-squares regression, using $(x_1, ..., x_{N-1})$ and $(u_1, ..., u_{N-1})$ to predict $(x_2, ..., x_N)$. Furthermore, given $(x_1, ..., x_N), (u_1, ..., u_N),$ and the emissions $(z_1, ..., z_N)$, one can again use least-squares to compute $C$ and $D$.
+
+In order to achieve this, subspace identification algorithms typically operate on quantities called block-Hankel matrices, consisting of time-lagged subsequences of input or ouput data. For example, in the linear-Gaussian case, the input and output\footnote{Here we overload $z$ from Eq.~\ref{generative_model} to refer to the output, as $z$ can be seen as the emission of a linear-Gaussian LDS.} block-Hankel matrices are defined as:
+\begin{align*}
+    Z_{0|2k-1} &\equiv 
+        \begin{pmatrix}
+            z_0 & z_1 & ... & z_{N' - 1} \\
+            z_1 & z_2 & ... & z_{N'} \\
+             & & \vdots & \\
+            z_{2k - 1} & z_{2k} & ... & z_{2k + N' - 2}
+        \end{pmatrix} 
+        \equiv \begin{pmatrix}
+            Z_{0| k-1} \\
+            Z_{k | 2k - 1}
+        \end{pmatrix} 
+        \equiv \begin{pmatrix}
+            Z_p \\
+            Z_f
+        \end{pmatrix} \\\\
+\end{align*}
+\begin{align*}
+    U_{0|2k-1} &\equiv 
+         \begin{pmatrix}
+             u_0 & u_1 & ... & u_{N' - 1} \\
+             u_1 & u_2 & ... & u_{N'} \\
+              & & \vdots & \\
+             u_{2k - 1} & u_{2k} & ... & u_{2k + N' - 2}
+         \end{pmatrix} 
+         \equiv \begin{pmatrix}
+             U_{0| k-1} \\
+             U_{k | 2k - 1}
+             \end{pmatrix} 
+        \equiv \begin{pmatrix}
+             U_p \\
+             U_f
+         \end{pmatrix}
+\end{align*}
+
+Note that each $z$ and $u$ above is typically a (column) vector, so these are  \textit{block} matrices. The top half of $Z_{0|2k-1}$ and $U_{0|2k-1}$ (i.e., containing rows $0$ through $k-1$) represent the ``past'' relative to the $k$th row; for simplicity we denote these $Z_p$ and $U_p$, respectively.  The bottom half of each matrix, by contrast, represents the ``future'', which we denote by $Z_f$ and $U_f$, respectively. Note that if $N$ is the total number of data points, $N' = N - 2k + 2$ is the number of columns of the matrix. Finally, the time lag parameter $k$ may be called the Hankel size and is defined by the user with only the requirement that $k \geq p$~\cite{katayama_subspace_2005}. An in-depth description of this is beyond the scope of this article, but it can be shown that only the top $p$ singular values of the Hankel matrix are greater than zero. Correspondingly, a typical heuristic is to build the Hankel matrix with large initial $k$ and then look at its singular value spectrum to pick a smaller $k$ more reflective of the underlying dynamics. 
+
+In order to see how the block-Hankel matrix relates to the system parameters, we repeatedly expand the linear-Gaussian components of  Eq.~\ref{generative_model} to yield:
+$$
+Z_p = \Gamma_k \begin{pmatrix}
+    x_0 & ... & x_{N' - 1}
+\end{pmatrix} + \Psi_k U_p
+$$
+$$
+\Gamma_k = \begin{pmatrix}
+        C \\
+        CA \\
+        CA^2 \\
+        \vdots \\
+        CA^{k - 1}
+    \end{pmatrix} 
+    \qquad
+    \Psi_k = \begin{pmatrix}
+        D & 0 & ... & 0 \\
+        CB & D &  ... & 0 \\
+        \vdots & & & \vdots \\
+        CA^{k - 2}B & ... & CB & D
+    \end{pmatrix}
+$$
+
+where $\Gamma_k$ and $\Psi_k$ are referred to as the extended observability and controllability matrices, respectively. An analogous relationship holds for $Z_f$ and $U_f$. 
+
+Different subspace identification algorithms are characterized by their approach to decomposing the Hankel matrix in order to extract the system parameters. In our case, we will use the N4SID algorithm \cite{van_overschee_n4sid_1994}. Briefly, this involves computing the RQ decomposition of the data matrix:
+\begin{align}
+    \begin{pmatrix}
+        U_p \\
+        U_f \\
+        Z_p \\
+        Z_f
+    \end{pmatrix} = RQ^T
+    \label{LQ_decomp}
+\end{align}
+
+It can be shown that processing various sub-blocks of the matrix $R$ permits extraction of the latent state sequence or the observability/controllability matrices, either of which can then be used to recover each of the system parameters \cite{ho_editorial_1966, van_overschee_n4sid_1994, van_overschee_subspace_1996, qin_overview_2006}. 
